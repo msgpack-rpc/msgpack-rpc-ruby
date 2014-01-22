@@ -14,8 +14,8 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "msgpack"
   s.summary = "MessagePack-RPC, asynchronous RPC library using MessagePack"
 
-  s.add_runtime_dependency "msgpack", ["~> 0.4.4"]
-  s.add_runtime_dependency "cool.io", ["~> 1.1.0"]
+  s.add_runtime_dependency "msgpack", ["~> 0.5.8"]
+  s.add_runtime_dependency "cool.io", ["~> 1.1.1"]
   s.add_development_dependency "rspec", [">= 0"]
   s.add_development_dependency 'bundler', ["~> 1.0"]
 end
