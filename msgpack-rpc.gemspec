@@ -4,8 +4,8 @@ require 'msgpack/rpc/version'
 Gem::Specification.new do |s|
   s.name = "msgpack-rpc"
   s.version = MessagePack::RPC::VERSION
-  s.authors = ["FURUHASHI Sadayuki"]
-  s.email = "frsyuki@users.sourceforge.jp"
+  s.authors = ["FURUHASHI Sadayuki", "Shuzo Kashihara"]
+  s.email = ["frsyuki@users.sourceforge.jp", "suma@users.sourceforge.jp"]
   s.files = `git ls-files`.split("\n")
   s.test_files = ["test/test_helper.rb"]
   s.license = "Apache 2.0"
