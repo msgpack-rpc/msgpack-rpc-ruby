@@ -1,5 +1,6 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'spec_helper.rb')
-require File.join(File.expand_path(File.dirname(__FILE__)), 'my_server.rb')
+require 'spec_helper'
+require_relative './my_server'
+
 include MyServerTest
 
 describe 'MessagePack::RPC::Client test' do
