@@ -1,11 +1,21 @@
-require 'rake'
+require 'bundler'
+require "bundler/gem_tasks"
+require "rspec/core/rake_task"
+
+RSpec::Core::RakeTask.new(:spec)
+
 require 'rake/testtask'
 require 'rake/clean'
 
-require 'bundler'
-Bundler::GemHelper.install_tasks
-
 task :default => [:build]
 
-task :test => ['test:unit','spec:unit']
-load 'tasks/msgpack_rpc_tasks.rake'
+task :test => [:spec]
+
+namespace :test do
+  desc "run test"
+  Rake::TestTask.new(:unit) do |t|
+    t.libs << 'lib'
+    t.pattern = 'test/*_test.rb'
+    t.verbose = true
+  end
+end
