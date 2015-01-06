@@ -54,7 +54,7 @@ describe 'MessagePack::RPC::Client test' do
 	 it 'should return nil values when you call notify' do
 	    @client.notify(:hello).should be_nil
 	    @client.notify(:sum,1,2).should be_nil
-      sleep 1
+	    sleep 1
 	 end
 
 	 it 'should return error when you call private method' do
