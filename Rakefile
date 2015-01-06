@@ -9,7 +9,7 @@ require 'rake/clean'
 
 task :default => [:build]
 
-task :test => [:spec]
+task :test => ["spec", "test:unit"]
 
 namespace :test do
   desc "run test"
