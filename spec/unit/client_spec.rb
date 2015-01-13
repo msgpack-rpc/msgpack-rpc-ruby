@@ -122,8 +122,6 @@ describe "MessagePack::RPC::Loop testing" do
 	end
 
 	 it "should return correct values when you use MessagePack::RPC::Loop" do
-		count = 0
-
 		@cli.callback(:hello) do |error, result|
 			result.should include("ok")
 			error.should be_nil
