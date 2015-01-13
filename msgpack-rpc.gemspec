@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "msgpack", ["~> 0.5.8"]
   s.add_runtime_dependency "cool.io", ["~> 1.2.4"]
+  s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
   s.add_development_dependency "test-unit"
   s.add_development_dependency 'bundler', ["~> 1.0"]
