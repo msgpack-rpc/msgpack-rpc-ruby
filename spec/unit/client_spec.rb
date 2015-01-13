@@ -1,5 +1,6 @@
-require File.join(File.expand_path(File.dirname(__FILE__)), 'spec_helper.rb')
-require File.join(File.expand_path(File.dirname(__FILE__)), 'my_server.rb')
+require 'spec_helper'
+require_relative './my_server'
+
 include MyServerTest
 
 describe 'MessagePack::RPC::Client test' do
@@ -23,7 +24,7 @@ describe 'MessagePack::RPC::Client test' do
 	 
 	 it 'should return "ok" and "3" when you call with call_async' do
 	    req1 = @client.call_async(:hello)
-	    req2 = @client.call_async(:sum,1,2)
+	    req2 = @client.call_async(:sum, 1, 2)
 	    req1.join
 	    req1.result.should include("ok")
 	    req1.error.should be_nil
@@ -34,23 +35,27 @@ describe 'MessagePack::RPC::Client test' do
 	 end
 
 	 it 'should return "ok" when you set callback(:hello)' do
-	    @client.callback(:hello) do |error, result|
+	    req = @client.callback(:hello) do |error, result|
 	    	result.should include("ok")
 		error.should be_nil
 	    end
+	    req.join
 	 end
 
 	 it 'should return "3" when you set callback(:sum)' do
 
-	    @client.callback(:sum) do |error, result|
-	    	result.shouble equal 3
+	    req = @client.callback(:sum, 1, 2) do |error, result|
+	    	result.should equal 3
 		error.should be_nil
 	    end
+	    req.join
 	 end
 
 	 it 'should return nil values when you call notify' do
-	    @client.notify(:hello).should be_nil
-	    @client.notify(:sum,1,2).should be_nil
+	    @client.call(:count).should eq 0
+	    @client.notify(:increase_count).should be_nil
+      sleep 0.5
+	    @client.call(:count).should eq 1
 	 end
 
 	 it 'should return error when you call private method' do
@@ -88,16 +93,16 @@ end
 describe "MessagePack::RPC::TimeoutError test"  do
 
 	 before(:each)do
-	    @client = start_client
+	    @client = start_client(PortHelper.find_port)
 	    @lsock = TCPServer.new("0.0.0.0",@client.port)
 	    @client.timeout = 1
 	 end
 	 
 	 it 'should return MessagePack::RPC::TimoutError' do
 	    lambda{@client.call(:hello)}.should raise_error(MessagePack::RPC::TimeoutError)
-	 end	 
+	 end
 
-	 after(:all)do
+	 after(:each)do
 	 	     @client.close
 		     @lsock.close
 	 end
@@ -117,8 +122,6 @@ describe "MessagePack::RPC::Loop testing" do
 	end
 
 	 it "should return correct values when you use MessagePack::RPC::Loop" do
-		count = 0
-
 		@cli.callback(:hello) do |error, result|
 			result.should include("ok")
 			error.should be_nil
