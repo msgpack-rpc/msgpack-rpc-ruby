@@ -1,3 +1,8 @@
+2015-01-13 version 0.5.3
+
+  * Upgrade cool.io-1.2.4 for Ruby 2.2
+  * Upgrade msgpack-0.5.10
+
 2013-01-22 version 0.5.2
 
   * Upgrade msgpack-0.5.8 for Ruby 2.0
