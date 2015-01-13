@@ -92,7 +92,7 @@ end
 describe "MessagePack::RPC::TimeoutError test"  do
 
 	 before(:each)do
-	    @client = start_client
+	    @client = start_client(PortHelper.find_port)
 	    @lsock = TCPServer.new("0.0.0.0",@client.port)
 	    @client.timeout = 1
 	 end
