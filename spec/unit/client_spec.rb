@@ -100,9 +100,9 @@ describe "MessagePack::RPC::TimeoutError test"  do
 	 
 	 it 'should return MessagePack::RPC::TimoutError' do
 	    lambda{@client.call(:hello)}.should raise_error(MessagePack::RPC::TimeoutError)
-	 end	 
+	 end
 
-	 after(:all)do
+	 after(:each)do
 	 	     @client.close
 		     @lsock.close
 	 end
