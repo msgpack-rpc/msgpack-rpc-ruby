@@ -6,6 +6,7 @@
 
 		def initialize(svr)
 			@svr = svr
+			@count = 0
 		end
 
 		def hello
@@ -14,6 +15,14 @@
 
 		def sum(a, b)
 			a + b
+		end
+
+		def count
+			@count
+		end
+
+		def increase_count
+			@count += 1
 		end
 
 		def exception
