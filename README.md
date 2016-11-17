@@ -239,6 +239,9 @@ server.run
 
 ## Copyright
 
-Author::    frsyuki <frsyuki@users.sourceforge.jp>
-Copyright:: Copyright (c) 2010 frsyuki
-License::   Apache License, Version 2.0
+- Author
+    - frsyuki <frsyuki@users.sourceforge.jp>
+- Copyright
+    - Copyright (c) 2010 frsyuki
+- License
+    - Apache License, Version 2.0
