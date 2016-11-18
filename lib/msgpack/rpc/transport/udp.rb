@@ -20,177 +20,177 @@ module RPC
 
 
 class UDPTransport
-	def initialize
-	end
+  def initialize
+  end
 
-	# Transport interface
-	def build_transport(session, address)
-		UDPClientTransport.new(session, address)
-	end
+  # Transport interface
+  def build_transport(session, address)
+    UDPClientTransport.new(session, address)
+  end
 
-	class BasicSocket < Cool.io::IOWatcher
-		HAVE_DNRL = UDPSocket.public_instance_methods.include?(:do_not_reverse_lookup)
+  class BasicSocket < Cool.io::IOWatcher
+    HAVE_DNRL = UDPSocket.public_instance_methods.include?(:do_not_reverse_lookup)
 
-		def initialize(io)
-			io.do_not_reverse_lookup = true if HAVE_DNRL
-			super(io)
-			@io = io
-		end
+    def initialize(io)
+      io.do_not_reverse_lookup = true if HAVE_DNRL
+      super(io)
+      @io = io
+    end
 
-		attr_reader :io
+    attr_reader :io
 
-		def on_readable
-			begin
-				data, addr = @io.recvfrom(64*1024) # FIXME buffer size
-			rescue Errno::EAGAIN
-				return
-			end
+    def on_readable
+      begin
+        data, addr = @io.recvfrom(64*1024) # FIXME buffer size
+      rescue Errno::EAGAIN
+        return
+      end
 
-			# FIXME multiple objects in one message
-			obj = MessagePack.unpack(data)
-			on_message(obj, addr)
-		rescue
-			# FIXME log
-			return
-		end
+      # FIXME multiple objects in one message
+      obj = MessagePack.unpack(data)
+      on_message(obj, addr)
+    rescue
+      # FIXME log
+      return
+    end
 
-		include MessageReceiver
-	end
+    include MessageReceiver
+  end
 end
 
 
 class UDPClientTransport
-	def initialize(session, address)
-		io = UDPSocket.new
-		io.connect(*address)
+  def initialize(session, address)
+    io = UDPSocket.new
+    io.connect(*address)
 
-		begin
-			@sock = ClientSocket.new(io, session)
-		rescue
-			io.close
-			raise
-		end
+    begin
+      @sock = ClientSocket.new(io, session)
+    rescue
+      io.close
+      raise
+    end
 
-		begin
-			session.loop.attach(@sock)
-		rescue
-			@sock.close
-			raise
-		end
-	end
+    begin
+      session.loop.attach(@sock)
+    rescue
+      @sock.close
+      raise
+    end
+  end
 
-	# ClientTransport interface
-	def send_data(data)
-		@sock.send_data(data)
-	end
+  # ClientTransport interface
+  def send_data(data)
+    @sock.send_data(data)
+  end
 
-	# ClientTransport interface
-	def close
-		@sock.detach if @sock.attached?
-		@sock.close
-	end
+  # ClientTransport interface
+  def close
+    @sock.detach if @sock.attached?
+    @sock.close
+  end
 
-	private
-	class ClientSocket < UDPTransport::BasicSocket
-		def initialize(io, session)
-			super(io)
-			@s = session
-		end
+  private
+  class ClientSocket < UDPTransport::BasicSocket
+    def initialize(io, session)
+      super(io)
+      @s = session
+    end
 
-		# MessageSendable interface
-		def send_data(data)
-			@io.send(data, 0)
-		end
+    # MessageSendable interface
+    def send_data(data)
+      @io.send(data, 0)
+    end
 
-		# MessageReceiver interface
-		def on_request(msgid, method, param, addr)
-			raise Error.new("request message on client session")
-		end
+    # MessageReceiver interface
+    def on_request(msgid, method, param, addr)
+      raise Error.new("request message on client session")
+    end
 
-		# MessageReceiver interface
-		def on_notify(method, param, addr)
-			raise Error.new("notify message on client session")
-		end
+    # MessageReceiver interface
+    def on_notify(method, param, addr)
+      raise Error.new("notify message on client session")
+    end
 
-		# MessageReceiver interface
-		def on_response(msgid, error, result, addr)
-			@s.on_response(self, msgid, error, result)
-		end
-	end
+    # MessageReceiver interface
+    def on_response(msgid, error, result, addr)
+      @s.on_response(self, msgid, error, result)
+    end
+  end
 end
 
 
 class UDPServerTransport
-	def initialize(address)
-		@address = address
-		@sock = nil
-	end
+  def initialize(address)
+    @address = address
+    @sock = nil
+  end
 
-	# ServerTransport interface
-	def listen(server)
-		@server = server
-		host, port = *@address.unpack
-		io = UDPSocket.new
-		io.bind(*@address)
+  # ServerTransport interface
+  def listen(server)
+    @server = server
+    host, port = *@address.unpack
+    io = UDPSocket.new
+    io.bind(*@address)
 
-		begin
-			@sock = ServerSocket.new(io, @server)
-		rescue
-			io.close
-			raise
-		end
+    begin
+      @sock = ServerSocket.new(io, @server)
+    rescue
+      io.close
+      raise
+    end
 
-		begin
-			@server.loop.attach(@sock)
-		rescue
-			@sock.close
-			raise
-		end
-	end
+    begin
+      @server.loop.attach(@sock)
+    rescue
+      @sock.close
+      raise
+    end
+  end
 
-	# ServerTransport interface
-	def close
-		return unless @lsock
-		@lsock.detach if @lsock.attached?
-		@lsock.close
-	end
+  # ServerTransport interface
+  def close
+    return unless @lsock
+    @lsock.detach if @lsock.attached?
+    @lsock.close
+  end
 
-	private
-	class ServerSocket < UDPTransport::BasicSocket
-		def initialize(io, server)
-			super(io)
-			@server = server
-		end
+  private
+  class ServerSocket < UDPTransport::BasicSocket
+    def initialize(io, server)
+      super(io)
+      @server = server
+    end
 
-		# MessageReceiver interface
-		def on_request(msgid, method, param, addr)
-			sender = ResponseSender.new(@io, addr[3], addr[1])
-			@server.on_request(sender, msgid, method, param)
-		end
+    # MessageReceiver interface
+    def on_request(msgid, method, param, addr)
+      sender = ResponseSender.new(@io, addr[3], addr[1])
+      @server.on_request(sender, msgid, method, param)
+    end
 
-		# MessageReceiver interface
-		def on_notify(method, param, addr)
-			@server.on_notify(method, param)
-		end
+    # MessageReceiver interface
+    def on_notify(method, param, addr)
+      @server.on_notify(method, param)
+    end
 
-		# MessageReceiver interface
-		def on_response(msgid, error, result, addr)
-			raise Error.new("response message on server session")
-		end
-	end
+    # MessageReceiver interface
+    def on_response(msgid, error, result, addr)
+      raise Error.new("response message on server session")
+    end
+  end
 
-	class ResponseSender
-		def initialize(io, host, port)
-			@io = io
-			@host = host
-			@port = port
-		end
+  class ResponseSender
+    def initialize(io, host, port)
+      @io = io
+      @host = host
+      @port = port
+    end
 
-		# MessageSendable interface
-		def send_data(data)
-			@io.send(data, 0, @host, @port)
-		end
-	end
+    # MessageSendable interface
+    def send_data(data)
+      @io.send(data, 0, @host, @port)
+    end
+  end
 end
 
 

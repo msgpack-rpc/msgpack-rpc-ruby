@@ -20,27 +20,27 @@ module RPC
 
 
 module MessageReceiver
-	def on_message(msg, *ctx)
-		case msg[0]
-		when REQUEST
-			on_request(msg[1], msg[2], msg[3], *ctx)
-		when RESPONSE
-			on_response(msg[1], msg[2], msg[3], *ctx)
-		when NOTIFY
-			on_notify(msg[1], msg[2], *ctx)
-		else
-			raise RPCError.new("unknown message type #{msg[0]}")
-		end
-	end
+  def on_message(msg, *ctx)
+    case msg[0]
+    when REQUEST
+      on_request(msg[1], msg[2], msg[3], *ctx)
+    when RESPONSE
+      on_response(msg[1], msg[2], msg[3], *ctx)
+    when NOTIFY
+      on_notify(msg[1], msg[2], *ctx)
+    else
+      raise RPCError.new("unknown message type #{msg[0]}")
+    end
+  end
 
-	#def on_request(msgid, method, param)
-	#end
+  #def on_request(msgid, method, param)
+  #end
 
-	#def on_notify(method, param)
-	#end
+  #def on_notify(method, param)
+  #end
 
-	#def on_response(msgid, error, result)
-	#end
+  #def on_response(msgid, error, result)
+  #end
 end
 
 

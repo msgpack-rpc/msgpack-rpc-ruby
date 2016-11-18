@@ -24,19 +24,19 @@ end
 
 
 class ObjectDispatcher
-	include Dispatcher
+  include Dispatcher
 
-	def initialize(obj, accept = obj.public_methods)
-		@obj = obj
-		@accept = accept.map {|m| m.is_a?(Integer) ? m : m.to_s }
-	end
+  def initialize(obj, accept = obj.public_methods)
+    @obj = obj
+    @accept = accept.map {|m| m.is_a?(Integer) ? m : m.to_s }
+  end
 
-	def dispatch(method, param, &block)
-		unless @accept.include?(method)
-			raise NoMethodError, "method `#{method}' is not accepted"
-		end
-		@obj.send(method, *param, &block)
-	end
+  def dispatch(method, param, &block)
+    unless @accept.include?(method)
+      raise NoMethodError, "method `#{method}' is not accepted"
+    end
+    @obj.send(method, *param, &block)
+  end
 end
 
 

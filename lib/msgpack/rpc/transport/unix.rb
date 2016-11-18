@@ -20,152 +20,152 @@ module RPC
 
 
 class UNIXTransport
-	def initialize
-	end
+  def initialize
+  end
 
-	# Transport interface
-	def build_transport(session, address)
-		UNIXClientTransport.new(session, address)
-	end
+  # Transport interface
+  def build_transport(session, address)
+    UNIXClientTransport.new(session, address)
+  end
 
-	class BasicSocket < Cool.io::UNIXSocket
-		def initialize(io)
-			super(io)
-			@pac = MessagePack::Unpacker.new
-		end
+  class BasicSocket < Cool.io::UNIXSocket
+    def initialize(io)
+      super(io)
+      @pac = MessagePack::Unpacker.new
+    end
 
-		# from Cool.io::TCPSocket
-		def on_readable
-			super
-		rescue
-			# FIXME send Connection Close message
-			# FIXME log
-			close
-		end
+    # from Cool.io::TCPSocket
+    def on_readable
+      super
+    rescue
+      # FIXME send Connection Close message
+      # FIXME log
+      close
+    end
 
-		# from Cool.io::UNIXSocket
-		def on_read(data)
-			@pac.feed_each(data) {|obj|
-				on_message(obj)
-			}
-		end
+    # from Cool.io::UNIXSocket
+    def on_read(data)
+      @pac.feed_each(data) {|obj|
+        on_message(obj)
+      }
+    end
 
-		include MessageReceiver
-	end
+    include MessageReceiver
+  end
 end
 
 
 class UNIXClientTransport
-	def initialize(session, address)
-		io = UNIXSocket.new(address)
+  def initialize(session, address)
+    io = UNIXSocket.new(address)
 
-		begin
-			@sock = ClientSocket.new(io, session)
-		rescue
-			io.close
-			raise
-		end
+    begin
+      @sock = ClientSocket.new(io, session)
+    rescue
+      io.close
+      raise
+    end
 
-		begin
-			session.loop.attach(@sock)
-		rescue
-			@sock.close
-			raise
-		end
-	end
+    begin
+      session.loop.attach(@sock)
+    rescue
+      @sock.close
+      raise
+    end
+  end
 
-	# ClientTransport interface
-	def send_data(data)
-		@sock.send_data(data)
-	end
+  # ClientTransport interface
+  def send_data(data)
+    @sock.send_data(data)
+  end
 
-	# ClientTransport interface
-	def close
-		@sock.detach if @sock.attached?
-		@sock.close
-	end
+  # ClientTransport interface
+  def close
+    @sock.detach if @sock.attached?
+    @sock.close
+  end
 
-	class ClientSocket < UNIXTransport::BasicSocket
-		def initialize(io, session)
-			super(io)
-			@s = session
-		end
+  class ClientSocket < UNIXTransport::BasicSocket
+    def initialize(io, session)
+      super(io)
+      @s = session
+    end
 
-		# MessageSendable interface
-		def send_data(data)
-			write data
-		end
+    # MessageSendable interface
+    def send_data(data)
+      write data
+    end
 
-		# MessageReceiver interface
-		def on_request(msgid, method, param)
-			raise Error.new("request message on client session")
-		end
+    # MessageReceiver interface
+    def on_request(msgid, method, param)
+      raise Error.new("request message on client session")
+    end
 
-		# MessageReceiver interface
-		def on_notify(method, param)
-			raise Error.new("notify message on client session")
-		end
+    # MessageReceiver interface
+    def on_notify(method, param)
+      raise Error.new("notify message on client session")
+    end
 
-		# MessageReceiver interface
-		def on_response(msgid, error, result)
-			@s.on_response(self, msgid, error, result)
-		end
-	end
+    # MessageReceiver interface
+    def on_response(msgid, error, result)
+      @s.on_response(self, msgid, error, result)
+    end
+  end
 end
 
 
 class UNIXServerTransport
-	def initialize(address)
-		@address = address
-		@sock = nil
-	end
+  def initialize(address)
+    @address = address
+    @sock = nil
+  end
 
-	# ServerTransport interface
-	def listen(server)
-		@server = server
-		@lsock  = Cool.io::UNIXServer.new(@address, ServerSocket, @server)
-		begin
-			@server.loop.attach(@lsock)
-		rescue
-			@lsock.close
-			raise
-		end
-	end
+  # ServerTransport interface
+  def listen(server)
+    @server = server
+    @lsock  = Cool.io::UNIXServer.new(@address, ServerSocket, @server)
+    begin
+      @server.loop.attach(@lsock)
+    rescue
+      @lsock.close
+      raise
+    end
+  end
 
-	# ServerTransport interface
-	def close
-		return unless @lsock
-		@lsock.detach if @lsock.attached?
-		@lsock.close
-	end
+  # ServerTransport interface
+  def close
+    return unless @lsock
+    @lsock.detach if @lsock.attached?
+    @lsock.close
+  end
 
-	private
-	class ServerSocket < UNIXTransport::BasicSocket
-		def initialize(io, server)
-			super(io)
-			@server = server
-		end
+  private
+  class ServerSocket < UNIXTransport::BasicSocket
+    def initialize(io, server)
+      super(io)
+      @server = server
+    end
 
-		# MessageSendable interface
-		def send_data(data)
-			write data
-		end
+    # MessageSendable interface
+    def send_data(data)
+      write data
+    end
 
-		# MessageReceiver interface
-		def on_request(msgid, method, param)
-			@server.on_request(self, msgid, method, param)
-		end
+    # MessageReceiver interface
+    def on_request(msgid, method, param)
+      @server.on_request(self, msgid, method, param)
+    end
 
-		# MessageReceiver interface
-		def on_notify(method, param)
-			@server.on_notify(method, param)
-		end
+    # MessageReceiver interface
+    def on_notify(method, param)
+      @server.on_notify(method, param)
+    end
 
-		# MessageReceiver interface
-		def on_response(msgid, error, result)
-			raise Error.new("response message on server session")
-		end
-	end
+    # MessageReceiver interface
+    def on_response(msgid, error, result)
+      raise Error.new("response message on server session")
+    end
+  end
 end
 
 

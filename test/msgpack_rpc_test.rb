@@ -7,292 +7,292 @@ $port = 65500
 
 class MessagePackRPCTest < Test::Unit::TestCase
 
-	class MyServer
-		def initialize(svr)
-			@svr = svr
-		end
+  class MyServer
+    def initialize(svr)
+      @svr = svr
+    end
 
-		def hello
-			"ok"
-		end
+    def hello
+      "ok"
+    end
 
-		def sum(a, b)
-			a + b
-		end
+    def sum(a, b)
+      a + b
+    end
 
-		def exception
-			raise "raised"
-		end
+    def exception
+      raise "raised"
+    end
 
-		def async
-			as = MessagePack::RPC::AsyncResult.new
-			@svr.start_timer(1, false) do
-				as.result "async"
-			end
-			as
-		end
+    def async
+      as = MessagePack::RPC::AsyncResult.new
+      @svr.start_timer(1, false) do
+        as.result "async"
+      end
+      as
+    end
 
-		def async_exception
-			as = MessagePack::RPC::AsyncResult.new
-			@svr.start_timer(1, false) do
-				as.error "async"
-			end
-			as
-		end
+    def async_exception
+      as = MessagePack::RPC::AsyncResult.new
+      @svr.start_timer(1, false) do
+        as.error "async"
+      end
+      as
+    end
 
-		private
-		def hidden
-		
-		end
-	end
+    private
+    def hidden
 
+    end
+  end
 
-	def next_port
-		port = $port += 1
-	end
 
+  def next_port
+    port = $port += 1
+  end
 
-	def test_listen
-		port = next_port
 
-		svr = MessagePack::RPC::Server.new
-		svr.listen("0.0.0.0", port, MyServer.new(svr))
-		svr.close
-	end
+  def test_listen
+    port = next_port
 
+    svr = MessagePack::RPC::Server.new
+    svr.listen("0.0.0.0", port, MyServer.new(svr))
+    svr.close
+  end
 
-	def start_server
-		port = next_port
 
-		svr = MessagePack::RPC::Server.new
-		svr.listen("0.0.0.0", port, MyServer.new(svr))
-		Thread.start do
-			svr.run
-			svr.close
-		end
+  def start_server
+    port = next_port
 
-		cli = MessagePack::RPC::Client.new("127.0.0.1", port)
-		cli.timeout = 10
+    svr = MessagePack::RPC::Server.new
+    svr.listen("0.0.0.0", port, MyServer.new(svr))
+    Thread.start do
+      svr.run
+      svr.close
+    end
 
-		return svr, cli
-	end
+    cli = MessagePack::RPC::Client.new("127.0.0.1", port)
+    cli.timeout = 10
 
+    return svr, cli
+  end
 
-	def test_call
-		svr, cli = start_server
 
-		result = cli.call(:hello)
-		assert_equal(result, "ok")
+  def test_call
+    svr, cli = start_server
 
-		result = cli.call(:sum, 1, 2)
-		assert_equal(result, 3)
+    result = cli.call(:hello)
+    assert_equal(result, "ok")
 
-		cli.close
-		svr.stop
-	end
+    result = cli.call(:sum, 1, 2)
+    assert_equal(result, 3)
 
+    cli.close
+    svr.stop
+  end
 
-	def test_send
-		svr, cli = start_server
 
-		req1 = cli.call_async(:hello)
-		req2 = cli.call_async(:sum, 1, 2)
+  def test_send
+    svr, cli = start_server
 
-		req1.join
-		req2.join
+    req1 = cli.call_async(:hello)
+    req2 = cli.call_async(:sum, 1, 2)
 
-		assert_equal(req1.result, "ok")
-		assert_nil(req1.error)
-		assert_equal(req2.result, 3)
-		assert_nil(req2.error)
+    req1.join
+    req2.join
 
-		cli.close
-		svr.stop
-	end
+    assert_equal(req1.result, "ok")
+    assert_nil(req1.error)
+    assert_equal(req2.result, 3)
+    assert_nil(req2.error)
 
+    cli.close
+    svr.stop
+  end
 
-	def test_callback
-		svr, cli = start_server
 
-		count = 0
+  def test_callback
+    svr, cli = start_server
 
-		cli.callback(:hello) do |error, result|
-			assert_equal(result, "ok")
-			assert_nil(error)
-			count += 1
-		end
+    count = 0
 
-		cli.callback(:sum, 1, 2) do |error, result|
-			assert_equal(result, 3)
-			assert_nil(error)
-			count += 1
-		end
+    cli.callback(:hello) do |error, result|
+      assert_equal(result, "ok")
+      assert_nil(error)
+      count += 1
+    end
 
-		while count < 2
-			cli.loop.run_once
-		end
+    cli.callback(:sum, 1, 2) do |error, result|
+      assert_equal(result, 3)
+      assert_nil(error)
+      count += 1
+    end
 
-		cli.close
-		svr.stop
-	end
+    while count < 2
+      cli.loop.run_once
+    end
 
+    cli.close
+    svr.stop
+  end
 
-	def test_notify
-		svr, cli = start_server
 
-		cli.notify(:hello)
-		cli.notify(:sum, 1, 2)
+  def test_notify
+    svr, cli = start_server
 
-		cli.close
-	end
+    cli.notify(:hello)
+    cli.notify(:sum, 1, 2)
 
+    cli.close
+  end
 
-	def test_hidden
-		svr, cli = start_server
 
-		count = 0
+  def test_hidden
+    svr, cli = start_server
 
-		rejected = false
-		begin
-			cli.call(:hidden)
-		rescue MessagePack::RPC::RemoteError
-			rejected = true
-		end
+    count = 0
 
-		assert_equal(rejected, true)
+    rejected = false
+    begin
+      cli.call(:hidden)
+    rescue MessagePack::RPC::RemoteError
+      rejected = true
+    end
 
-		cli.close
-		svr.stop
-	end
+    assert_equal(rejected, true)
 
+    cli.close
+    svr.stop
+  end
 
-	def test_exception
-		svr, cli = start_server
 
-		raised = false
-		begin
-			cli.call(:exception)
-		rescue MessagePack::RPC::RemoteError
-			assert_equal($!.message, "raised")
-			raised = true
-		end
+  def test_exception
+    svr, cli = start_server
 
-		assert_equal(raised, true)
+    raised = false
+    begin
+      cli.call(:exception)
+    rescue MessagePack::RPC::RemoteError
+      assert_equal($!.message, "raised")
+      raised = true
+    end
 
-		cli.close
-		svr.stop
-	end
+    assert_equal(raised, true)
 
+    cli.close
+    svr.stop
+  end
 
-	def test_async
-		svr, cli = start_server
 
-		result = cli.call(:async)
-		assert_equal(result, "async")
+  def test_async
+    svr, cli = start_server
 
-		cli.close
-		svr.stop
-	end
+    result = cli.call(:async)
+    assert_equal(result, "async")
 
+    cli.close
+    svr.stop
+  end
 
-	def test_async_exception
-		svr, cli = start_server
 
-		raised = false
-		begin
-			cli.call(:async_exception)
-		rescue MessagePack::RPC::RemoteError
-			assert_equal($!.message, "async")
-			raised = true
-		end
+  def test_async_exception
+    svr, cli = start_server
 
-		assert_equal(raised, true)
+    raised = false
+    begin
+      cli.call(:async_exception)
+    rescue MessagePack::RPC::RemoteError
+      assert_equal($!.message, "async")
+      raised = true
+    end
 
-		cli.close
-		svr.stop
-	end
+    assert_equal(raised, true)
 
+    cli.close
+    svr.stop
+  end
 
-	def test_pool
-		svr, cli = start_server
 
-		sp = MessagePack::RPC::SessionPool.new
-		s = sp.get_session('127.0.0.1', cli.port)
+  def test_pool
+    svr, cli = start_server
 
-		result = s.call(:hello)
-		assert_equal(result, "ok")
+    sp = MessagePack::RPC::SessionPool.new
+    s = sp.get_session('127.0.0.1', cli.port)
 
-		result = s.call(:sum, 1, 2)
-		assert_equal(result, 3)
+    result = s.call(:hello)
+    assert_equal(result, "ok")
 
-		sp.close
-		cli.close
-		svr.stop
-	end
+    result = s.call(:sum, 1, 2)
+    assert_equal(result, 3)
 
+    sp.close
+    cli.close
+    svr.stop
+  end
 
-	def test_loop
-		port = next_port
 
-		loop = MessagePack::RPC::Loop.new
+  def test_loop
+    port = next_port
 
-		svr = MessagePack::RPC::Server.new(loop)
-		svr.listen("0.0.0.0", port, MyServer.new(svr))
+    loop = MessagePack::RPC::Loop.new
 
-		cli = MessagePack::RPC::Client.new("127.0.0.1", port, loop)
-		cli.timeout = 10
+    svr = MessagePack::RPC::Server.new(loop)
+    svr.listen("0.0.0.0", port, MyServer.new(svr))
 
-		count = 0
+    cli = MessagePack::RPC::Client.new("127.0.0.1", port, loop)
+    cli.timeout = 10
 
-		cli.callback(:hello) do |error, result|
-			assert_equal(result, "ok")
-			assert_nil(error)
-			count += 1
-		end
+    count = 0
 
-		cli.callback(:sum, 1, 2) do |error, result|
-			assert_equal(result, 3)
-			assert_nil(error)
-			count += 1
-		end
+    cli.callback(:hello) do |error, result|
+      assert_equal(result, "ok")
+      assert_nil(error)
+      count += 1
+    end
 
-		while count < 2
-			loop.run_once
-		end
+    cli.callback(:sum, 1, 2) do |error, result|
+      assert_equal(result, 3)
+      assert_nil(error)
+      count += 1
+    end
 
-		cli.close
-		svr.close
-	end
+    while count < 2
+      loop.run_once
+    end
 
+    cli.close
+    svr.close
+  end
 
-	def test_timeout
-		port = next_port
 
-		lsock = TCPServer.new("0.0.0.0", port)
+  def test_timeout
+    port = next_port
 
-		cli = MessagePack::RPC::Client.new("127.0.0.1", port)
-		cli.timeout = 1
+    lsock = TCPServer.new("0.0.0.0", port)
 
-		timeout = false
-		begin
-			cli.call(:hello)
-		rescue MessagePack::RPC::TimeoutError
-			timeout = true
-		end
+    cli = MessagePack::RPC::Client.new("127.0.0.1", port)
+    cli.timeout = 1
 
-		assert_equal(timeout, true)
+    timeout = false
+    begin
+      cli.call(:hello)
+    rescue MessagePack::RPC::TimeoutError
+      timeout = true
+    end
 
-		cli.close
-		lsock.close
-	end
+    assert_equal(timeout, true)
 
-	def test_address
-		addr = MessagePack::RPC::Address.new('172.16.0.11', 18900)
-		raw = ''
-		addr.to_msgpack(raw)
-		msg = MessagePack.unpack(raw)
-		addr2 = MessagePack::RPC::Address.load(msg)
-		assert_equal(addr, addr2)
-	end
+    cli.close
+    lsock.close
+  end
+
+  def test_address
+    addr = MessagePack::RPC::Address.new('172.16.0.11', 18900)
+    raw = ''
+    addr.to_msgpack(raw)
+    msg = MessagePack.unpack(raw)
+    addr2 = MessagePack::RPC::Address.load(msg)
+    assert_equal(addr, addr2)
+  end
 end
 
