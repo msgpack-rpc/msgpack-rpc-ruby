@@ -1,3 +1,7 @@
+2020-10-07 version 0.7.0
+
+  * Upgrade cool.io-1.7.0
+
 2017-04-06 version 0.6.0
 
   * Relax msgpack version requirements for supporting Ruby 2.4 and further
