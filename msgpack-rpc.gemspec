@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.summary = "MessagePack-RPC, asynchronous RPC library using MessagePack"
 
   s.add_runtime_dependency "msgpack"
-  s.add_runtime_dependency "cool.io", ["~> 1.4.3"]
+  s.add_runtime_dependency "cool.io", ["~> 1.7.0"]
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
   s.add_development_dependency "test-unit"
